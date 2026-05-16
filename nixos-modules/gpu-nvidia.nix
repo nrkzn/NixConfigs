@@ -43,7 +43,7 @@ in {
           [
             nvidia-vaapi-driver
             libvdpau-va-gl
-            vaapiVdpau
+            libva-vdpau-driver
           ]
           ++ lib.optionals (!cfg.headless) [
             vulkan-loader
