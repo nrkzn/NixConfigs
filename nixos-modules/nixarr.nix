@@ -143,7 +143,9 @@ in {
     prowlarr = mkServiceOpts {
       name = "Prowlarr";
       defaultPort = 9696;
-      defaultVpn = true;
+      # Default off the VPN — Prowlarr only queries indexer APIs and doesn't
+      # touch the torrent swarm. See host config for the full rationale.
+      defaultVpn = false;
     };
     bazarr = mkServiceOpts {
       name = "Bazarr";

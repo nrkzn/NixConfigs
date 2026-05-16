@@ -77,7 +77,12 @@
       prowlarr = {
         enable = true;
         port = 9696;
-        vpn.enable = true;
+        # Prowlarr just hits indexer APIs to fetch search results; it doesn't
+        # transfer torrent data itself. Keeping it OFF the VPN avoids the
+        # nginx-proxy-into-netns complication and gives faster searches.
+        # Flip vpn.enable = true if your threat model includes hiding which
+        # indexers you query from your ISP.
+        vpn.enable = false;
       };
 
       bazarr = {
