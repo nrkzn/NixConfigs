@@ -46,6 +46,6 @@
     programs.zsh.enable = true;
     environment.shells = with pkgs; [zsh bash];
 
-    system.stateVersion = lib.mkDefault "24.11";
+    system.stateVersion = lib.mkDefault "25.11";
   };
 }

@@ -11,7 +11,7 @@
   config = lib.mkIf config.myHomeManager.core.enable {
     home.username = lib.mkDefault "nathan";
     home.homeDirectory = lib.mkDefault "/home/nathan";
-    home.stateVersion = lib.mkDefault "24.11";
+    home.stateVersion = lib.mkDefault "25.11";
 
     xdg.enable = true;
     xdg.userDirs = {
