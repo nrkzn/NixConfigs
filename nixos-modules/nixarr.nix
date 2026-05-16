@@ -331,9 +331,18 @@ in {
       };
     };
 
-    # Pre-create the media directory tree before any service starts
+    # Pre-create the media directory tree before any service starts.
+    #
+    # The top-level mediaDir uses `Z` (capital) which CREATES the directory
+    # if missing AND recursively fixes ownership/perms if it exists with
+    # wrong values. This corrects the case where Nixarr's internal init
+    # created /data/media as root:root before the media user was declared.
+    #
+    # The leaf subdirs use `d` (lowercase) which just ensures existence —
+    # Z's recursion already handles their ownership. Listing them ensures
+    # they exist even if Z's parent walk hasn't created them yet.
     systemd.tmpfiles.rules = [
-      "d ${cfg.mediaDir}                0775 media media -"
+      "Z ${cfg.mediaDir}                0775 media media -"
       "d ${cfg.mediaDir}/movies         0775 media media -"
       "d ${cfg.mediaDir}/shows          0775 media media -"
       "d ${cfg.mediaDir}/music          0775 media media -"
