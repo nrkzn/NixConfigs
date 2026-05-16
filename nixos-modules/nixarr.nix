@@ -333,22 +333,24 @@ in {
 
     # Pre-create the media directory tree before any service starts.
     #
-    # The top-level mediaDir uses `Z` (capital) which CREATES the directory
-    # if missing AND recursively fixes ownership/perms if it exists with
-    # wrong values. This corrects the case where Nixarr's internal init
-    # created /data/media as root:root before the media user was declared.
+    # Nixarr's own convention puts imported/organized library content under
+    # `${mediaDir}/library/<service>/` — that's what each *arr app sees as
+    # its root folder. Downloads land in `${mediaDir}/torrents/` (separate
+    # from library, on the same filesystem, so the *arr apps can hardlink
+    # finished files into the library without duplicating disk usage).
     #
-    # The leaf subdirs use `d` (lowercase) which just ensures existence —
-    # Z's recursion already handles their ownership. Listing them ensures
-    # they exist even if Z's parent walk hasn't created them yet.
+    # `Z` (capital) on the top dirs CREATES if missing AND recursively
+    # fixes ownership — corrects /data/media being root-owned from
+    # Nixarr's pre-media-user init phase.
     systemd.tmpfiles.rules = [
-      "Z ${cfg.mediaDir}                0775 media media -"
-      "d ${cfg.mediaDir}/movies         0775 media media -"
-      "d ${cfg.mediaDir}/shows          0775 media media -"
-      "d ${cfg.mediaDir}/music          0775 media media -"
-      "d ${cfg.mediaDir}/books          0775 media media -"
-      "d ${cfg.mediaDir}/torrents       0775 media media -"
-      "d ${cfg.transmission.downloadDir} 0775 media media -"
+      "Z ${cfg.mediaDir}                            0775 media media -"
+      "Z ${cfg.mediaDir}/library                    0775 media media -"
+      "d ${cfg.mediaDir}/library/movies             0775 media media -"
+      "d ${cfg.mediaDir}/library/shows              0775 media media -"
+      "d ${cfg.mediaDir}/library/music              0775 media media -"
+      "d ${cfg.mediaDir}/library/books              0775 media media -"
+      "Z ${cfg.mediaDir}/torrents                   0775 media media -"
+      "d ${cfg.transmission.downloadDir}            0775 media media -"
       "d ${cfg.transmission.downloadDir}/.incomplete 0775 media media -"
     ];
   };

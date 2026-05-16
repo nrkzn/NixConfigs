@@ -97,8 +97,20 @@ The mediaserver's [configuration.nix](hosts/mediaserver/configuration.nix) uses
 Nixarr's `settings-sync` to declaratively wire:
 
 - Prowlarr → all *arr apps (indexer push) via `enable-nixarr-apps = true`
-- Sonarr → Transmission (`tv-sonarr` category, `/data/media/torrents/tv` dir)
-- Radarr → Transmission (`movies-radarr` category, `/data/media/torrents/movies` dir)
+- Sonarr → Transmission (defaults; set category in Sonarr UI if you want sorting)
+- Radarr → Transmission (defaults; set category in Radarr UI if you want sorting)
+
+Library layout (created by the flake's tmpfiles rules under `/data/media`):
+
+```
+/data/media/
+├── library/        ← *arr root folders point here
+│   ├── shows/      ← Sonarr root
+│   ├── movies/     ← Radarr root
+│   ├── music/      ← Lidarr root
+│   └── books/      ← Shelfmark root
+└── torrents/       ← Transmission downloads land here, hardlinked into library/ on import
+```
 - Bazarr → Sonarr + Radarr (library list pull, monitored-only)
 
 That covers the **connectivity** assumptions in TRaSH-Guides. What it does
