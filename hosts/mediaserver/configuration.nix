@@ -217,25 +217,23 @@
     };
   };
 
-  # Nixarr's docs say it auto-creates the `media` user/group, but in practice
-  # on this build it didn't (and our systemd.tmpfiles rules in the module
-  # were trying to chown to a non-existent media:media). Declare it
-  # explicitly. If a future Nixarr release starts also declaring it, we'll
-  # hit a conflict-on-uid error at eval time — at that point, drop these
-  # two blocks and re-rely on nixarr.mediaUsers alone.
-  users.groups.media = {
+  # The `media` user/group is normally created by Nixarr's bazarr module
+  # (and possibly others). On systems where that doesn't happen — e.g.
+  # before bazarr is enabled — we provide a fallback declaration so the
+  # systemd.tmpfiles rules in nixos-modules/nixarr.nix have a valid owner.
+  # `lib.mkDefault` makes these the LOWEST-priority assignments, so any
+  # module that explicitly sets a uid/gid (bazarr does, with its own
+  # values) wins automatically — no eval-time conflict.
+  users.groups.media = lib.mkDefault {
     gid = 989;
   };
-  users.users.media = {
+  users.users.media = lib.mkDefault {
     isSystemUser = true;
     group = "media";
     uid = 989;
     description = "Shared owner of the media library";
   };
 
-  # Add nathan to the media group (nixarr.mediaUsers does this too, but
-  # being explicit removes ambiguity about who's authoritative).
-  users.users.nathan.extraGroups = ["media"];
   nixarr.mediaUsers = ["nathan"];
 
   # *arr v4 mandates an auth method. Nixarr's settings-sync asserts we've
