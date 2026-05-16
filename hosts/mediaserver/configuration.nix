@@ -224,19 +224,10 @@
     };
   };
 
-  # Dedicated media group so the user can read everything Nixarr writes.
-  # uid/gid pinned so files written by Transmission keep the same numeric
-  # owner across rebuilds (otherwise NixOS auto-assigns and a future change
-  # to user ordering could renumber, breaking Jellyfin's reads).
-  users.groups.media = {
-    gid = 989;
-  };
-  users.users.media = {
-    isSystemUser = true;
-    group = "media";
-    uid = 989;
-  };
-  users.users.nathan.extraGroups = ["media"];
+  # Nixarr creates the `media` user/group itself with a fixed gid. Don't
+  # redeclare it here (conflicts at eval). Use `nixarr.mediaUsers` to add
+  # additional users (i.e. nathan) to the media group instead.
+  nixarr.mediaUsers = ["nathan"];
 
   environment.systemPackages = with pkgs; [
     rsync
