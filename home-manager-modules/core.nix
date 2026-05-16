@@ -33,7 +33,7 @@
       duf
       ncdu
       tldr
-      neofetch
+      fastfetch
     ];
 
     programs.home-manager.enable = true;
