@@ -36,6 +36,12 @@ in {
   config = lib.mkIf cfg.enable (lib.mkMerge [
     # ----- shared (desktop + headless) -----
     {
+      # `services.xserver.videoDrivers = ["nvidia"]` is what actually causes
+      # NixOS to build the kernel module, install nvidia-smi, blacklist
+      # nouveau, etc. It is NOT optional in headless mode — it just doesn't
+      # start an X session unless services.xserver.enable is true.
+      services.xserver.videoDrivers = ["nvidia"];
+
       hardware.graphics = {
         enable = true;
         enable32Bit = !cfg.headless;
@@ -62,7 +68,6 @@ in {
           else config.boot.kernelPackages.nvidiaPackages.stable;
       };
 
-      # nvidia-smi etc. are useful everywhere
       environment.systemPackages = with pkgs; [
         libva-utils
         vdpauinfo
@@ -71,8 +76,6 @@ in {
 
     # ----- desktop only -----
     (lib.mkIf (!cfg.headless) {
-      services.xserver.videoDrivers = ["nvidia"];
-
       environment.sessionVariables = {
         LIBVA_DRIVER_NAME = "nvidia";
         GBM_BACKEND = "nvidia-drm";
@@ -82,13 +85,16 @@ in {
 
     # ----- headless / transcoding only -----
     (lib.mkIf cfg.headless {
-      # Load nvidia + nvidia_uvm at boot without pulling in X
+      # Force-load the nvidia modules at boot regardless of X.
       boot.kernelModules = ["nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm"];
 
-      # Persistence daemon keeps the driver warm so the first transcode isn't slow
+      # Belt-and-braces: explicitly blacklist nouveau in case anything tries
+      # to load it before the nvidia module wins.
+      boot.blacklistedKernelModules = ["nouveau"];
+
+      # Persistence daemon keeps the driver warm so first transcode isn't slow
       hardware.nvidia.nvidiaPersistenced = true;
 
-      # Make sure /dev/nvidia* exist on boot, not just when something opens them
       services.udev.extraRules = ''
         KERNEL=="nvidia", RUN+="${pkgs.coreutils}/bin/chmod 0666 /dev/nvidia*"
         KERNEL=="nvidia_uvm", RUN+="${pkgs.coreutils}/bin/chmod 0666 /dev/nvidia-uvm*"
