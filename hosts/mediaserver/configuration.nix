@@ -217,9 +217,25 @@
     };
   };
 
-  # Nixarr creates the `media` user/group itself with a fixed gid. Don't
-  # redeclare it here (conflicts at eval). Use `nixarr.mediaUsers` to add
-  # additional users (i.e. nathan) to the media group instead.
+  # Nixarr's docs say it auto-creates the `media` user/group, but in practice
+  # on this build it didn't (and our systemd.tmpfiles rules in the module
+  # were trying to chown to a non-existent media:media). Declare it
+  # explicitly. If a future Nixarr release starts also declaring it, we'll
+  # hit a conflict-on-uid error at eval time — at that point, drop these
+  # two blocks and re-rely on nixarr.mediaUsers alone.
+  users.groups.media = {
+    gid = 989;
+  };
+  users.users.media = {
+    isSystemUser = true;
+    group = "media";
+    uid = 989;
+    description = "Shared owner of the media library";
+  };
+
+  # Add nathan to the media group (nixarr.mediaUsers does this too, but
+  # being explicit removes ambiguity about who's authoritative).
+  users.users.nathan.extraGroups = ["media"];
   nixarr.mediaUsers = ["nathan"];
 
   # *arr v4 mandates an auth method. Nixarr's settings-sync asserts we've
