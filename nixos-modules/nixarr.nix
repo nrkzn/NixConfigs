@@ -263,7 +263,7 @@ in {
             rpc-bind-address = "0.0.0.0";
             rpc-host-whitelist-enabled = false;
             rpc-whitelist-enabled = true;
-            rpc-whitelist = "127.0.0.1,10.0.0.*";
+            rpc-whitelist = "127.0.0.1,10.1.1.*";
           }
           // lib.optionalAttrs (cfg.transmission.uiPassword != null) {
             rpc-authentication-required = true;

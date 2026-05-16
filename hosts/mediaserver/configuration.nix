@@ -199,7 +199,7 @@
   time.timeZone = "America/New_York";
 
   # Firewall: SSH is reachable from anywhere (opened by myNixOS.ssh). All
-  # Nixarr service ports are reachable ONLY from the 10.0.0.0/24 LAN.
+  # Nixarr service ports are reachable ONLY from the 10.1.1.0/24 LAN.
   # The default allowedTCPPorts list stays empty so nothing leaks if the box
   # ever ends up on a public IP — LAN access is granted by nftables rules
   # matched on source address.
@@ -207,8 +207,8 @@
   networking.firewall.allowedUDPPorts = [];
 
   networking.firewall.extraInputRules = ''
-    ip saddr 10.0.0.0/24 tcp dport { 8096, 8920, 8989, 7878, 9696, 6767, 9091, 5055, 8686, 8084 } accept comment "nixarr web UIs (LAN only)"
-    ip saddr 10.0.0.0/24 udp dport { 1900, 7359 } accept comment "jellyfin DLNA + autodiscover (LAN only)"
+    ip saddr 10.1.1.0/24 tcp dport { 8096, 8920, 8989, 7878, 9696, 6767, 9091, 5055, 8686, 8084 } accept comment "nixarr web UIs (LAN only)"
+    ip saddr 10.1.1.0/24 udp dport { 1900, 7359 } accept comment "jellyfin DLNA + autodiscover (LAN only)"
   '';
 
   # On a fresh install, Sonarr/Radarr need to start once before they write
