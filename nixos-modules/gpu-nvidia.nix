@@ -68,6 +68,10 @@ in {
           else config.boot.kernelPackages.nvidiaPackages.stable;
       };
 
+      # NVIDIA's legacy_470 (and some other proprietary builds) require an
+      # explicit license acceptance in addition to allowUnfree.
+      nixpkgs.config.nvidia.acceptLicense = true;
+
       environment.systemPackages = with pkgs; [
         libva-utils
         vdpauinfo
