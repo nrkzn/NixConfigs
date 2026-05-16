@@ -152,27 +152,15 @@
     enable-nixarr-apps = true;  # auto-wires Prowlarr → every enabled *arr via internal API keys
   };
 
-  nixarr.sonarr.settings-sync.transmission = {
-    enable = true;
-    config.fields = {
-      host = "localhost";
-      port = config.nixarr.transmission.uiPort;
-      useSsl = false;
-      category = "tv-sonarr";
-      directory = "${config.myNixOS.nixarr.transmission.downloadDir}/tv";
-    };
-  };
-
-  nixarr.radarr.settings-sync.transmission = {
-    enable = true;
-    config.fields = {
-      host = "localhost";
-      port = config.nixarr.transmission.uiPort;
-      useSsl = false;
-      category = "movies-radarr";
-      directory = "${config.myNixOS.nixarr.transmission.downloadDir}/movies";
-    };
-  };
+  # Nixarr's `transmission` shortcut auto-fills host/port/useSsl. Earlier I
+  # tried to pass `category` and `directory` as fields too, but Nixarr
+  # validates the schema against the *arr's API and those names aren't
+  # accepted. To inspect the real schema on a running system:
+  #   sudo nixarr show-radarr-schemas download_client | jq '.'
+  # If you want categories, set them inside Radarr's UI under Download
+  # Clients → Transmission after first boot.
+  nixarr.sonarr.settings-sync.transmission.enable = true;
+  nixarr.radarr.settings-sync.transmission.enable = true;
 
   # apiKeyFile is left to Nixarr's default (${nixarr.stateDir}/secrets/*.api-key);
   # don't hard-code it here or a future Nixarr refactor will silently
