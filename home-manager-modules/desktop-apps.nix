@@ -11,7 +11,10 @@
   config = lib.mkIf config.myHomeManager.desktopApps.enable {
     home.packages = with pkgs; [
       vscode
-      discord
+      # discord — removed: depends on insecure OpenSSL 1.1 in current nixpkgs.
+      # If you want it back, either add `nixpkgs.config.permittedInsecurePackages
+      # = ["openssl-1.1.1w"];` somewhere, or use vesktop (a forked client that
+      # doesn't have the OpenSSL dependency): add `vesktop` here instead.
       obsidian
       mpv
       vlc
