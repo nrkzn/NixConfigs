@@ -262,10 +262,16 @@ in {
             # Bind on all interfaces but rely on the host firewall to scope
             # access to the LAN. RPC whitelist is enforced by Transmission
             # itself as a second layer.
+            #
+            # The whitelist includes:
+            #   - 127.0.0.1 / *.*.*.* host loopback
+            #   - 10.1.1.* the LAN
+            #   - 10.* covers RFC1918 private space the netns bridge uses,
+            #     which is what *arr settings-sync queries from
             rpc-bind-address = "0.0.0.0";
             rpc-host-whitelist-enabled = false;
             rpc-whitelist-enabled = true;
-            rpc-whitelist = "127.0.0.1,10.1.1.*";
+            rpc-whitelist = "127.0.0.1,10.*.*.*,192.168.*.*";
           }
           // lib.optionalAttrs (cfg.transmission.uiPassword != null) {
             rpc-authentication-required = true;
