@@ -217,6 +217,14 @@
     };
   };
 
+  # Order the *arr apps after Transmission so their startup health-checks
+  # don't see a not-yet-listening download client. `After=` is ordering
+  # only — not a hard requirement, so if Transmission fails for any reason
+  # the *arr apps still start (just with a download-client warning).
+  systemd.services.sonarr.after = ["transmission.service"];
+  systemd.services.radarr.after = ["transmission.service"];
+  systemd.services.lidarr.after = ["transmission.service"];
+
   # The `media` user/group is normally created by Nixarr's bazarr module
   # (and possibly others). On systems where that doesn't happen — e.g.
   # before bazarr is enabled — we provide a fallback declaration so the
