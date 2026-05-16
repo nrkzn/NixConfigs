@@ -24,7 +24,7 @@
 
     networking = {
       enable = true;
-      hostName = "mediaserver";
+      hostName = "holodeck";
     };
 
     nixarr = {
