@@ -229,6 +229,16 @@
   # additional users (i.e. nathan) to the media group instead.
   nixarr.mediaUsers = ["nathan"];
 
+  # *arr v4 mandates an auth method. Nixarr's settings-sync asserts we've
+  # set one before it will sync indexers. We're LAN-only behind a firewall,
+  # so `DisabledForLocalAddresses` skips the login screen for LAN clients
+  # while still requiring auth from anywhere off-LAN (defense in depth in
+  # case the firewall rule ever changes).
+  services.sonarr.settings.auth.required   = "DisabledForLocalAddresses";
+  services.radarr.settings.auth.required   = "DisabledForLocalAddresses";
+  services.lidarr.settings.auth.required   = "DisabledForLocalAddresses";
+  services.prowlarr.settings.auth.required = "DisabledForLocalAddresses";
+
   environment.systemPackages = with pkgs; [
     rsync
     nfs-utils
