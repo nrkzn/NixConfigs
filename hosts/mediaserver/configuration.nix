@@ -37,11 +37,15 @@
       openFirewall = false;
 
       # WireGuard config at /etc/nixarr/wg.conf (root:root, 0400) — keep it
-      # out of the Nix store. Transmission + Prowlarr ride this tunnel.
+      # out of the Nix store. Transmission rides this tunnel; Prowlarr does
+      # not (vpn.enable = false on it for faster indexer queries).
       vpn = {
         enable = true;
         wgConfFile = "/etc/nixarr/wg.conf";
         vpnTestService.enable = true;
+        # Nixarr's nginx reverse proxy only allows 192.168.x.x by default.
+        # Our LAN is 10.1.1.0/24 — extend the allow list.
+        accessibleFrom = ["10.1.1.0/24"];
       };
 
       jellyfin = {

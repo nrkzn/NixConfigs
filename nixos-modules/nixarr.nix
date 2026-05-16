@@ -70,6 +70,17 @@ in {
           agenix or place it in /etc directly).
         '';
       };
+      accessibleFrom = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [];
+        example = ["10.1.1.0/24"];
+        description = ''
+          Additional LAN subnets that should be allowed to reach VPN-routed
+          services via Nixarr's internal nginx reverse proxy. Nixarr already
+          allows 192.168.0.0/24, 192.168.1.0/24, and 127.0.0.1 by default —
+          use this for non-standard LAN ranges (e.g. 10.x.x.x).
+        '';
+      };
       vpnTestService.enable = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -230,6 +241,7 @@ in {
         enable = true;
         wgConf = cfg.vpn.wgConfFile;
         vpnTestService.enable = cfg.vpn.vpnTestService.enable;
+        accessibleFrom = cfg.vpn.accessibleFrom;
       };
 
       jellyfin = {
