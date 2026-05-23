@@ -30,6 +30,8 @@
       ncdu
       smartmontools
       lm_sensors
+      wireguard-tools  # `wg show` for VPN debugging
+      dnsutils         # nslookup / dig for DNS debugging
     ];
 
     # No automatic suspend on a server
