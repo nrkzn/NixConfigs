@@ -46,6 +46,9 @@
         # Nixarr's nginx reverse proxy only allows 192.168.x.x by default.
         # Our LAN is 10.1.1.0/24 — extend the allow list.
         accessibleFrom = ["10.1.1.0/24"];
+        # ProtonVPN gives a dynamic forwarded port via NAT-PMP. Lease it,
+        # renew it, and push it into Transmission live.
+        portForward.enable = true;
       };
 
       jellyfin = {
@@ -62,6 +65,8 @@
       transmission = {
         enable = true;
         port = 9091;
+        # peerPort is just the initial value; the protonvpn-natpmp service
+        # overrides it at runtime with whatever port Proton leases via NAT-PMP.
         peerPort = 50000;
         vpn.enable = true;
         downloadDir = "/data/media/torrents";

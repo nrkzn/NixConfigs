@@ -86,6 +86,30 @@ in {
         default = false;
         description = "Spin up a one-shot service that prints the VPN exit IP for verification.";
       };
+
+      portForward = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable ProtonVPN NAT-PMP dynamic port forwarding for Transmission.
+            Runs natpmpc inside the VPN netns to lease a peer port, renews it
+            before expiry, and pushes the assigned port into Transmission's
+            RPC live (no restart). Requires a ProtonVPN Plus account on a
+            P2P server with port forwarding enabled.
+          '';
+        };
+        gateway = lib.mkOption {
+          type = lib.types.str;
+          default = "10.2.0.1";
+          description = "NAT-PMP gateway inside the VPN tunnel (ProtonVPN uses 10.2.0.1).";
+        };
+        netns = lib.mkOption {
+          type = lib.types.str;
+          default = "wg";
+          description = "Name of the network namespace Nixarr creates for the VPN.";
+        };
+      };
     };
 
     # ----- Jellyfin -----
@@ -365,5 +389,63 @@ in {
       "d ${cfg.transmission.downloadDir}            0775 media media -"
       "d ${cfg.transmission.downloadDir}/.incomplete 0775 media media -"
     ];
+
+    # ----- ProtonVPN NAT-PMP dynamic port forwarding -----
+    # ProtonVPN hands out a forwarded port via NAT-PMP, leased for 60s and
+    # subject to change on reconnect. This service runs natpmpc INSIDE the
+    # VPN netns (the request must traverse the tunnel to Proton's gateway),
+    # renews the lease every 45s, and pushes the assigned port into
+    # Transmission live over RPC — no restart, active torrents keep running.
+    systemd.services.protonvpn-natpmp = lib.mkIf (cfg.vpn.enable && cfg.vpn.portForward.enable) {
+      description = "ProtonVPN NAT-PMP port forwarding for Transmission";
+      # Bind to the VPN netns lifecycle: start after it's up, stop with it.
+      after = ["wg.service" "transmission.service"];
+      wants = ["wg.service"];
+      bindsTo = ["wg.service"];
+      wantedBy = ["multi-user.target"];
+
+      path = with pkgs; [libnatpmp transmission_4 gnugrep gawk coreutils iproute2];
+
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 10;
+      };
+
+      script = ''
+        set -u
+        GW="${cfg.vpn.portForward.gateway}"
+        NETNS="${cfg.vpn.portForward.netns}"
+        RPC_PORT="${toString cfg.transmission.port}"
+
+        last_port=""
+
+        while true; do
+          # Renew both UDP and TCP mappings (Proton requires both). natpmpc
+          # must run inside the VPN namespace so the request goes over the
+          # tunnel to Proton's gateway, not the host's default route.
+          ip netns exec "$NETNS" natpmpc -a 1 0 udp 60 -g "$GW" >/dev/null 2>&1
+          mapping=$(ip netns exec "$NETNS" natpmpc -a 1 0 tcp 60 -g "$GW" 2>/dev/null)
+
+          # Output line looks like:
+          #   Mapped public port 41234 protocol TCP to local port 0 ...
+          port=$(echo "$mapping" | grep -oP 'Mapped public port \K[0-9]+' | head -1)
+
+          if [ -n "$port" ] && [ "$port" != "$last_port" ]; then
+            echo "ProtonVPN assigned forwarded port: $port (was: ''${last_port:-none})"
+            # Push into Transmission via RPC. transmission-remote talks to the
+            # daemon on localhost:RPC_PORT (the nginx proxy forwards into netns).
+            if transmission-remote "localhost:$RPC_PORT" -p "$port" >/dev/null 2>&1; then
+              echo "Updated Transmission peer-port to $port"
+              last_port="$port"
+            else
+              echo "WARNING: failed to set Transmission peer-port to $port; will retry"
+            fi
+          fi
+
+          # Lease is 60s; renew with margin.
+          sleep 45
+        done
+      '';
+    };
   };
 }
