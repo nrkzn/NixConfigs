@@ -32,6 +32,7 @@
       lm_sensors
       wireguard-tools  # `wg show` for VPN debugging
       dnsutils         # nslookup / dig for DNS debugging
+      libnatpmp        # `natpmpc` for NAT-PMP port-forward debugging
     ];
 
     # No automatic suspend on a server
