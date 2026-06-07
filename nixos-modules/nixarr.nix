@@ -421,26 +421,38 @@ in {
         last_port=""
 
         while true; do
-          # Renew both UDP and TCP mappings (Proton requires both). natpmpc
-          # must run inside the VPN namespace so the request goes over the
-          # tunnel to Proton's gateway, not the host's default route.
-          ip netns exec "$NETNS" natpmpc -a 1 0 udp 60 -g "$GW" >/dev/null 2>&1
-          mapping=$(ip netns exec "$NETNS" natpmpc -a 1 0 tcp 60 -g "$GW" 2>/dev/null)
+          # Match ProtonVPN's documented order: UDP first, then TCP, and only
+          # proceed if UDP succeeds. Both must be renewed each cycle or Proton
+          # tears the mapping down after the 60s lease.
+          if ip netns exec "$NETNS" natpmpc -a 1 0 udp 60 -g "$GW" >/dev/null 2>&1; then
+            mapping=$(ip netns exec "$NETNS" natpmpc -a 1 0 tcp 60 -g "$GW" 2>/dev/null)
+          else
+            echo "WARNING: UDP NAT-PMP mapping failed (tunnel down?); retrying"
+            sleep 10
+            continue
+          fi
 
-          # Output line looks like:
-          #   Mapped public port 41234 protocol TCP to local port 0 ...
+          # Output line: "Mapped public port 41234 protocol TCP to local port 0 ..."
           port=$(echo "$mapping" | grep -oP 'Mapped public port \K[0-9]+' | head -1)
 
-          if [ -n "$port" ] && [ "$port" != "$last_port" ]; then
-            echo "ProtonVPN assigned forwarded port: $port (was: ''${last_port:-none})"
-            # Push into Transmission via RPC. transmission-remote talks to the
-            # daemon on localhost:RPC_PORT (the nginx proxy forwards into netns).
-            if transmission-remote "localhost:$RPC_PORT" -p "$port" >/dev/null 2>&1; then
-              echo "Updated Transmission peer-port to $port"
+          if [ -z "$port" ]; then
+            echo "WARNING: could not parse forwarded port from natpmpc; retrying"
+            sleep 10
+            continue
+          fi
+
+          # Push the port to Transmission EVERY cycle, not just on change.
+          # This self-heals if Transmission restarted and reverted to its
+          # config-default peer port while the NAT-PMP port stayed the same.
+          # transmission-remote -x sets the port; we only log on change to
+          # keep the journal quiet.
+          if transmission-remote "localhost:$RPC_PORT" -p "$port" >/dev/null 2>&1; then
+            if [ "$port" != "$last_port" ]; then
+              echo "ProtonVPN forwarded port: $port (was: ''${last_port:-none}) — pushed to Transmission"
               last_port="$port"
-            else
-              echo "WARNING: failed to set Transmission peer-port to $port; will retry"
             fi
+          else
+            echo "WARNING: failed to set Transmission peer-port to $port; will retry"
           fi
 
           # Lease is 60s; renew with margin.
