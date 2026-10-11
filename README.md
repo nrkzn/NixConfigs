@@ -57,27 +57,34 @@ features by flipping those switches in `hosts/<host>/configuration.nix` and
 ## First-time setup on a new machine
 
 1. Install NixOS using the standard installer.
-2. Clone this repo to `/etc/nixos` (or anywhere).
-3. Replace the placeholder hardware file with the one generated on the target:
+2. Clone this repo to `/etc/nixos` and give it to your user:
    ```
-   sudo nixos-generate-config --show-hardware-config > hosts/<host>/hardware-configuration.nix
-   sudo git add hosts/<host>/hardware-configuration.nix   # flakes only see tracked files
+   sudo git clone https://github.com/nrkzn/NixConfigs.git /etc/nixos
+   sudo chown -R nathan:users /etc/nixos
    ```
-   Keep it (and `flake.lock`) **local to the machine — don't commit them**;
-   they differ per system. `git add` without committing is enough for Nix.
-4. Build and switch. The flake has an entry per hostname (`blackeye`,
-   `holodeck`), so no `#name` is needed:
+3. Generate the machine's hardware file (it is gitignored, like `flake.lock` —
+   both are **per machine and never committed**):
    ```
-   sudo nixos-rebuild switch --flake .
+   nixos-generate-config --show-hardware-config > /etc/nixos/hosts/<host>/hardware-configuration.nix
+   ```
+4. Build and switch. Always use `path:` — it reads the repo from disk, so the
+   ignored per-machine files are included (a plain `--flake /etc/nixos`
+   would only see git-tracked files and miss them). The flake has an entry
+   per hostname (`blackeye`, `holodeck`), so no `#name` is needed:
+   ```
+   sudo nixos-rebuild switch --flake path:/etc/nixos
    ```
 5. As root, set the user's password: `passwd nathan` (no passwords are
    stored in this repo).
 
 ## Updating
 
+The zsh aliases wrap these (`update`, `rebuild`):
+
 ```
-nix flake update                                    # bump inputs
-sudo nixos-rebuild switch --flake .#<host>          # rebuild
+git -C /etc/nixos pull --ff-only                      # config changes
+nix flake update --flake path:/etc/nixos              # bump inputs (local flake.lock)
+sudo nixos-rebuild switch --flake path:/etc/nixos     # rebuild
 ```
 
 ## Standalone home-manager (optional)

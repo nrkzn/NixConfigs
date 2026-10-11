@@ -17,6 +17,8 @@
     xdg.userDirs = {
       enable = true;
       createDirectories = true;
+      # Keep exporting XDG_*_DIR (legacy default; desktop apps read them).
+      setSessionVariables = true;
     };
 
     home.packages = with pkgs; [

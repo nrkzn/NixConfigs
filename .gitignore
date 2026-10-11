@@ -1,0 +1,8 @@
+# Per-machine state — generated on and kept local to each host, never
+# committed. Builds use `--flake path:/etc/nixos`, which reads these from
+# disk regardless of git (and skips the dirty-tree warning).
+hosts/*/hardware-configuration.nix
+flake.lock
+
+# nixos-rebuild build output
+result

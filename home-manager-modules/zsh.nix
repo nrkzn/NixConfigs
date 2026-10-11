@@ -11,6 +11,8 @@
   config = lib.mkIf config.myHomeManager.zsh.enable {
     programs.zsh = {
       enable = true;
+      # Keep .zshrc/.zsh_history in $HOME (legacy default) rather than ~/.config/zsh.
+      dotDir = config.home.homeDirectory;
       enableCompletion = true;
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
@@ -23,8 +25,11 @@
         lt = "eza --tree --icons";
         cat = "bat";
         cd = "z";
-        rebuild = "sudo nixos-rebuild switch --flake .";
-        update = "nix flake update";
+        # `path:` reads the repo from disk, so the untracked per-machine
+        # hardware-configuration.nix and flake.lock are included and Nix
+        # doesn't warn about a dirty git tree. Config is picked by hostname.
+        rebuild = "sudo nixos-rebuild switch --flake path:/etc/nixos";
+        update = "nix flake update --flake path:/etc/nixos";
         gc = "sudo nix-collect-garbage -d";
       };
 
