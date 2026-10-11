@@ -21,6 +21,8 @@
       enable = true;
       maxretry = 5;
       bantime = "1h";
+      # Never ban the home LAN — a few bad key attempts shouldn't lock us out.
+      ignoreIP = ["10.1.1.0/24"];
     };
 
     environment.systemPackages = with pkgs; [
