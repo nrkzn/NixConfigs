@@ -226,7 +226,7 @@
     enable = true;
     # Attr name must be the tunnel UUID (a tunnel *name* would need cert.pem
     # on the server to resolve it).
-    tunnels."00000000-0000-0000-0000-000000000000" = { # TODO: UUID from `cloudflared tunnel create`
+    tunnels."7b08523b-e24a-4ac3-8fe5-273aebfedc32" = {
       credentialsFile = config.sops.secrets.cloudflared-holodeck.path;
       default = "http_status:404";
       # Keep hostnames one level under kozian.cloud so Cloudflare's free

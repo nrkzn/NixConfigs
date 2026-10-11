@@ -8,9 +8,10 @@
 # After changing recipients, re-encrypt: sops updatekeys secrets/<file>.yaml
 keys:
   - &nathan age15qv6c5xfphfdehhqdrsz4ls3u7ry9uy00cqeq259u7x04xvyzq4sp2t0lj
-  - &holodeck age1REPLACE_WITH_HOLODECK_HOST_KEY
+  - &holodeck age1d5zpuq3tuqfqxkke8gj4dfa2kqg8dhjetzhvkzcnm7p4esguqfyq5yqzfa
 creation_rules:
-  - path_regex: secrets/mediaserver\.yaml$
+  # [/\\] so the rule matches on Windows (backslash paths) as well as Linux
+  - path_regex: secrets[/\\]mediaserver\.yaml$
     key_groups:
       - age:
           - *nathan
