@@ -124,9 +124,19 @@ That covers the **connectivity** assumptions in TRaSH-Guides.
 
 [hosts/mediaserver/recyclarr.nix](hosts/mediaserver/recyclarr.nix) enables
 Nixarr's Recyclarr module, which syncs TRaSH-Guides into Sonarr and Radarr
-daily: quality definitions (file sizes), the **HD Bluray + WEB** (Radarr) and
-**WEB-1080p** (Sonarr) profiles with their custom formats, and TRaSH's
-Jellyfin naming schemes. API keys are injected by Nixarr — nothing to set.
+daily: quality definitions (file sizes), TRaSH's **German** profiles with
+their custom formats, and TRaSH's Jellyfin naming schemes. API keys are
+injected by Nixarr — nothing to set.
+
+Profiles (in both Sonarr and Radarr):
+
+- **[German] HD Bluray + WEB** — everything that isn't anime
+- **[German] Anime HD Bluray + WEB** — anime (set Seerr's *Anime Quality
+  Profile* to this one)
+
+Both prefer **German DL** releases (German dub + original audio: English for
+English shows, Japanese for anime), accept German-only or original-only as a
+stopgap, and keep upgrading towards German DL.
 
 Trigger a sync by hand / read its output:
 
@@ -142,16 +152,20 @@ journalctl -u recyclarr -e
 2. **Root folders** — Settings → Media Management → Root Folders:
    Sonarr `/data/media/library/shows`, Radarr `/data/media/library/movies`,
    Lidarr `/data/media/library/music`.
-3. **Use the synced profile** — after Recyclarr's first run, pick
-   *WEB-1080p* / *HD Bluray + WEB* when adding series/movies (and as default
-   in the "Add" dialog). Existing items: Mass Editor → Quality Profile.
-4. **Media Management toggles** (TRaSH basics): *Use Hardlinks instead of
+3. **Use the synced profiles** — after Recyclarr's first run, pick
+   *[German] HD Bluray + WEB* (or the *Anime* one) when adding series/movies.
+   Existing items: Mass Editor → Quality Profile. Anime series in Sonarr
+   also need Series Type → *Anime*.
+4. **Jellyfin audio** — per user, Settings → Playback → *Preferred audio
+   language*: German to default to the dub, or leave empty to get the
+   release's default track; switch tracks in the player either way.
+5. **Media Management toggles** (TRaSH basics): *Use Hardlinks instead of
    Copy* on, *Rename* on (Recyclarr sets the format), *Unmonitor Deleted*
    on, *Propers and Repacks* → **Do not Prefer** (the custom formats score
    them instead).
-5. **Lidarr** — Recyclarr doesn't support it; follow
+6. **Lidarr** — Recyclarr doesn't support it; follow
    [TRaSH's Lidarr guide](https://trash-guides.info/Lidarr/) by hand if wanted.
-6. **Seerr** — Settings → General → *Enable Proxy Support* (it sits behind
+7. **Seerr** — Settings → General → *Enable Proxy Support* (it sits behind
    the Cloudflare tunnel), and point its Sonarr/Radarr servers at the synced
    profiles.
 

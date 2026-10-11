@@ -1,26 +1,46 @@
 {config, ...}: let
   arr = config.myNixOS.nixarr;
+
+  # TRaSH-Guides quality profile trash IDs (German variants).
+  profiles = {
+    radarr = {
+      german = "2b90e905c99490edc7c7a5787443748b"; # [German] HD Bluray + WEB
+      germanAnime = "bf3cc2e99ad9a804a9b0d0e538e1fbba"; # [German] Anime HD Bluray + WEB
+    };
+    sonarr = {
+      german = "dca7e5e9e99c703bcbdaaa471dd40e98"; # [German] HD Bluray + WEB
+      germanAnime = "6fe5937e1dcc2269e23b49eb46dfe6d6"; # [German] Anime HD Bluray + WEB
+    };
+  };
+
+  assignTo = ids: map (id: {trash_id = id;}) ids;
 in {
   # --------------------------------------------------------------------------
   # TRaSH-Guides quality profiles, custom formats, quality sizes and naming
   # for Sonarr + Radarr, synced daily by Recyclarr (v8 config schema).
   #
-  # Mirrors recyclarr/config-templates:
-  #   radarr  hd-bluray-web  → "HD Bluray + WEB" (1080p, Bluray preferred)
-  #   sonarr  web-1080p      → "WEB-1080p"
-  # Trash IDs are stable identifiers from the TRaSH-Guides JSON; comments name
-  # what each one is. Browse alternatives with `recyclarr list` on the server.
+  # Language goal: German dub AND the original-language track (English for
+  # English shows, Japanese for anime). TRaSH's German profiles score that
+  # directly via their language custom formats:
+  #   German DL  (German + original audio)  +11000  ← preferred
+  #   German     (German audio only)        +10000
+  #   original only (no German)                  0  ← grabbed if nothing
+  #                                                  better, then upgraded
+  #   Not German / original / English      −35000  ← effectively blocked
+  # Cutoff is 35000, so the *arrs keep upgrading towards a German DL release.
+  #
+  # Mirrors recyclarr/config-templates german-hd-bluray-web and
+  # german-anime-hd-bluray-web. Pick the Anime profile for anime (Seerr has a
+  # separate "Anime Quality Profile" setting for Sonarr).
   #
   # 1080p on purpose: the GTX 970M can't transcode HEVC, and "Golden Rule HD"
-  # (kept at its default) penalises x265 for HD releases so Jellyfin can
-  # direct-play or NVENC-transcode H.264 instead of falling back to the CPU.
+  # penalises x265 for HD releases so Jellyfin can direct-play or
+  # NVENC-transcode H.264. (Anime is often 10-bit x265 regardless — that
+  # falls back to CPU transcoding if a client can't direct-play it.)
   #
   # API keys: Nixarr's recyclarr-setup service reads the *arr-generated keys
   # from ${stateDir}/secrets/ and exposes them as env vars, referenced below
   # with `!env_var`. Nothing secret lives in this file.
-  #
-  # Not covered by Recyclarr (still UI work, see README): root folders,
-  # picking the synced profile as default, Lidarr (no Recyclarr support).
   # --------------------------------------------------------------------------
   nixarr.recyclarr = {
     enable = true;
@@ -35,14 +55,24 @@ in {
 
         quality_profiles = [
           {
-            trash_id = "d1d67249d3890e49bc12e275d989a7e9"; # HD Bluray + WEB
+            trash_id = profiles.radarr.german;
+            reset_unmatched_scores.enabled = true;
+          }
+          {
+            trash_id = profiles.radarr.germanAnime;
             reset_unmatched_scores.enabled = true;
           }
         ];
 
         custom_format_groups.add = [
-          {trash_id = "f8bf8eab4617f12dfdbd16303d8da245";} # [Optional] Golden Rule HD
-          {trash_id = "a3ac6af01d78e4f21fcb75f601ac96df";} # [Unwanted] Unwanted Formats
+          {
+            trash_id = "f8bf8eab4617f12dfdbd16303d8da245"; # [Optional] Golden Rule HD
+            assign_scores_to = assignTo [profiles.radarr.german];
+          }
+          {
+            trash_id = "0ca61b4b233178d07113082a7acff72d"; # [Unwanted] Unwanted Formats German
+            assign_scores_to = assignTo [profiles.radarr.german profiles.radarr.germanAnime];
+          }
         ];
 
         # TRaSH's Jellyfin naming: "Movie (Year) [tmdbid-123]" folders/files,
@@ -64,16 +94,24 @@ in {
 
         quality_profiles = [
           {
-            trash_id = "72dae194fc92bf828f32cde7744e51a1"; # WEB-1080p
+            trash_id = profiles.sonarr.german;
+            reset_unmatched_scores.enabled = true;
+          }
+          {
+            trash_id = profiles.sonarr.germanAnime;
             reset_unmatched_scores.enabled = true;
           }
         ];
 
         custom_format_groups.add = [
-          {trash_id = "158188097a58d7687dee647e04af0da3";} # [Optional] Golden Rule HD
-          {trash_id = "74aff4168620ed49dcc67e92b2c2a5b4";} # [Optional] Language Profiles
-          {trash_id = "85fae4a2294965b75710ef2989c850eb";} # [Streaming Services] HD/UHD boost
-          {trash_id = "59c3af66780d08332fdc64e68297098f";} # [Unwanted] Unwanted Formats
+          {
+            trash_id = "158188097a58d7687dee647e04af0da3"; # [Optional] Golden Rule HD
+            assign_scores_to = assignTo [profiles.sonarr.german profiles.sonarr.germanAnime];
+          }
+          {
+            trash_id = "6f0872eebfc95b1f93474b7ac866ced0"; # [Unwanted] Unwanted Formats German
+            assign_scores_to = assignTo [profiles.sonarr.german profiles.sonarr.germanAnime];
+          }
         ];
 
         media_naming = {
