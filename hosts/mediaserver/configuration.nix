@@ -206,6 +206,9 @@
   sops = {
     defaultSopsFile = ../../secrets/mediaserver.yaml;
     age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+    # Secrets are age-only; don't import the RSA host key as a GPG key
+    # (sops-nix does that by default).
+    gnupg.sshKeyPaths = [];
     secrets.cloudflared-holodeck = {};
   };
 
