@@ -28,6 +28,10 @@
       description = "Nathan";
       shell = pkgs.zsh;
       initialPassword = "changeme";
+      # SSH is key-only (see ssh.nix). One key per client machine.
+      openssh.authorizedKeys.keyFiles = [
+        ../keys/blackeyedesktop.pub
+      ];
       extraGroups = [
         "wheel"
         "networkmanager"

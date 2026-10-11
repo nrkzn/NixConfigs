@@ -15,6 +15,11 @@
     hyprland.url = "github:hyprwm/Hyprland?ref=v0.53.0";
 
     nixarr.url = "github:rasmus-kirk/nixarr";
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
@@ -23,6 +28,7 @@
     home-manager,
     hyprland,
     nixarr,
+    sops-nix,
     ...
   }: let
     system = "x86_64-linux";
@@ -86,6 +92,7 @@
           ++ [
             ./hosts/mediaserver/configuration.nix
             nixarr.nixosModules.default
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;

@@ -198,6 +198,46 @@
     };
   };
 
+  # --------------------------------------------------------------------------
+  # Secrets (sops-nix). Decrypted at activation with this host's SSH host key
+  # (converted to age), so no extra key lives on the server. Recipients are
+  # listed in /.sops.yaml; edit with `sops secrets/mediaserver.yaml`.
+  # Secrets default to root:root 0400 under /run/secrets/.
+  # --------------------------------------------------------------------------
+  sops = {
+    defaultSopsFile = ../../secrets/mediaserver.yaml;
+    age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+    secrets.cloudflared-holodeck = {};
+  };
+
+  # --------------------------------------------------------------------------
+  # Cloudflare Tunnel — public access to Jellyfin + Jellyseerr with no open
+  # inbound ports (cloudflared dials out). Locally managed: routing lives
+  # here, not in the dashboard. Created once with
+  #   nix-shell -p cloudflared
+  #   cloudflared tunnel login && cloudflared tunnel create holodeck
+  # and its credentials JSON stored as the `cloudflared-holodeck` secret.
+  #
+  # Tunnel traffic arrives from 127.0.0.1, so NEVER route an *arr app here:
+  # their `DisabledForLocalAddresses` auth would let anyone in. Jellyfin and
+  # Jellyseerr enforce their own logins.
+  # --------------------------------------------------------------------------
+  services.cloudflared = {
+    enable = true;
+    # Attr name must be the tunnel UUID (a tunnel *name* would need cert.pem
+    # on the server to resolve it).
+    tunnels."00000000-0000-0000-0000-000000000000" = { # TODO: UUID from `cloudflared tunnel create`
+      credentialsFile = config.sops.secrets.cloudflared-holodeck.path;
+      default = "http_status:404";
+      # Keep hostnames one level under kozian.cloud so Cloudflare's free
+      # Universal SSL (*.kozian.cloud) covers them.
+      ingress = {
+        "watch.kozian.cloud" = "http://localhost:${toString config.myNixOS.nixarr.jellyfin.port}";
+        "holo.kozian.cloud" = "http://localhost:${toString config.myNixOS.nixarr.seerr.port}";
+      };
+    };
+  };
+
   time.timeZone = "America/New_York";
 
   # Firewall: SSH is reachable from anywhere (opened by myNixOS.ssh). All
@@ -266,8 +306,7 @@
   environment.systemPackages = with pkgs; [
     rsync
     nfs-utils
-    ffmpeg-full  # for testing NVENC: `ffmpeg -hwaccels` should list cuda
-  ];
+    ffmpeg-full  # for testing NVENC: `ffmpeg -hwaccels` should list cuda  ];
 
   # Give Jellyfin's systemd unit access to the NVIDIA device nodes so NVENC/
   # NVDEC works. After rebuild, in Jellyfin's web UI → Dashboard → Playback,

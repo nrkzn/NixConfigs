@@ -22,7 +22,7 @@
 
     networking = {
       enable = true;
-      hostName = "desktop";
+      hostName = "blackeye";
     };
 
     # Pick the GPU module that matches your hardware; both default off.
