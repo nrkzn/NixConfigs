@@ -106,6 +106,11 @@
             }
           ];
       };
+
+      # Hostname aliases, so `nixos-rebuild --flake .` (no #name) picks the
+      # right config on each machine — it looks up the current hostname.
+      blackeye = self.nixosConfigurations.desktop;
+      holodeck = self.nixosConfigurations.mediaserver;
     };
 
     # Standalone home configs (optional, for `home-manager switch --flake .#user@host`)

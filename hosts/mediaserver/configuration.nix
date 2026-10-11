@@ -7,6 +7,7 @@
 }: {
   imports = [
     ./hardware-configuration.nix
+    ./recyclarr.nix
   ];
 
   # Pin to 6.6 LTS — the legacy 470 NVIDIA driver (required for the GTX
@@ -151,11 +152,9 @@
   #   - Prowlarr is the single source of indexers, pushed to Sonarr/Radarr/Lidarr
   #   - Sonarr + Radarr each have Transmission as their download client
   #   - Bazarr pulls its library list from Sonarr + Radarr
-  # NOTE: Nixarr's settings-sync does NOT cover quality profiles, custom
-  # formats, naming schemes, or release profiles — the parts of TRaSH-Guides
-  # most people associate with it. Those are still manual UI work after
-  # first boot, or use Recyclarr (https://recyclarr.dev/) to push them.
-  # See [README.md](../../README.md#trash-guides-followup) for the checklist.
+  # Quality profiles, custom formats, quality sizes and naming come from
+  # Recyclarr instead — see ./recyclarr.nix. The remaining manual steps are
+  # in [README.md](../../README.md#trash-guides-followup).
   # --------------------------------------------------------------------------
   nixarr.prowlarr.settings-sync = {
     enable-nixarr-apps = true;  # auto-wires Prowlarr → every enabled *arr via internal API keys

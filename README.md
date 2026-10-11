@@ -61,13 +61,17 @@ features by flipping those switches in `hosts/<host>/configuration.nix` and
 3. Replace the placeholder hardware file with the one generated on the target:
    ```
    sudo nixos-generate-config --show-hardware-config > hosts/<host>/hardware-configuration.nix
+   sudo git add hosts/<host>/hardware-configuration.nix   # flakes only see tracked files
    ```
-4. Build and switch:
+   Keep it (and `flake.lock`) **local to the machine — don't commit them**;
+   they differ per system. `git add` without committing is enough for Nix.
+4. Build and switch. The flake has an entry per hostname (`blackeye`,
+   `holodeck`), so no `#name` is needed:
    ```
-   sudo nixos-rebuild switch --flake .#desktop
-   # or
-   sudo nixos-rebuild switch --flake .#mediaserver
+   sudo nixos-rebuild switch --flake .
    ```
+5. As root, set the user's password: `passwd nathan` (no passwords are
+   stored in this repo).
 
 ## Updating
 
@@ -90,6 +94,7 @@ home-manager switch --flake .#nathan@desktop
 - `home-manager` — follows nixpkgs
 - `hyprland` — official flake (used by desktop)
 - `nixarr` — `rasmus-kirk/nixarr` (used by mediaserver)
+- `sops-nix` — encrypted secrets (used by mediaserver; recipients in `.sops.yaml`)
 
 ## TRaSH-Guides followup
 
@@ -113,18 +118,42 @@ Library layout (created by the flake's tmpfiles rules under `/data/media`):
 ```
 - Bazarr → Sonarr + Radarr (library list pull, monitored-only)
 
-That covers the **connectivity** assumptions in TRaSH-Guides. What it does
-**not** cover (Nixarr has no options for these — manual UI work or external
-tooling required):
+That covers the **connectivity** assumptions in TRaSH-Guides.
 
-1. **Quality profiles** — per-app, in each web UI (Settings → Profiles).
-   Or run [Recyclarr](https://recyclarr.dev/) to sync them from TRaSH templates.
-2. **Custom Formats** (HQ release groups, x265 penalties, HDR, etc.) — Recyclarr.
-3. **Naming schemes** — copy the TRaSH naming strings into each app's
-   Settings → Media Management → Episode/Movie Naming.
-4. **Indexers** — add them inside Prowlarr's web UI once; they auto-push to
-   the *arr apps because of `enable-nixarr-apps`.
-5. **Release profiles** (Sonarr only) — Settings → Profiles → Release Profiles.
+### Recyclarr (quality profiles, custom formats, naming)
+
+[hosts/mediaserver/recyclarr.nix](hosts/mediaserver/recyclarr.nix) enables
+Nixarr's Recyclarr module, which syncs TRaSH-Guides into Sonarr and Radarr
+daily: quality definitions (file sizes), the **HD Bluray + WEB** (Radarr) and
+**WEB-1080p** (Sonarr) profiles with their custom formats, and TRaSH's
+Jellyfin naming schemes. API keys are injected by Nixarr — nothing to set.
+
+Trigger a sync by hand / read its output:
+
+```
+sudo systemctl start recyclarr
+journalctl -u recyclarr -e
+```
+
+### Still manual (one-time, in each web UI)
+
+1. **Indexers** — add them in Prowlarr once; they auto-push to Sonarr/Radarr/
+   Lidarr because of `enable-nixarr-apps`.
+2. **Root folders** — Settings → Media Management → Root Folders:
+   Sonarr `/data/media/library/shows`, Radarr `/data/media/library/movies`,
+   Lidarr `/data/media/library/music`.
+3. **Use the synced profile** — after Recyclarr's first run, pick
+   *WEB-1080p* / *HD Bluray + WEB* when adding series/movies (and as default
+   in the "Add" dialog). Existing items: Mass Editor → Quality Profile.
+4. **Media Management toggles** (TRaSH basics): *Use Hardlinks instead of
+   Copy* on, *Rename* on (Recyclarr sets the format), *Unmonitor Deleted*
+   on, *Propers and Repacks* → **Do not Prefer** (the custom formats score
+   them instead).
+5. **Lidarr** — Recyclarr doesn't support it; follow
+   [TRaSH's Lidarr guide](https://trash-guides.info/Lidarr/) by hand if wanted.
+6. **Seerr** — Settings → General → *Enable Proxy Support* (it sits behind
+   the Cloudflare tunnel), and point its Sonarr/Radarr servers at the synced
+   profiles.
 
 ### Jellyfin transcoding on the GTX 970M (Maxwell)
 
@@ -140,27 +169,6 @@ for. After first boot, in Jellyfin → Dashboard → Playback → Transcoding:
 Most x265/HEVC content in your library will hardware-decode but CPU-encode.
 For a small library this is fine; for many simultaneous remote streams,
 consider direct-play presets per device instead of transcoding.
-
-### Recyclarr (recommended next step)
-
-If you want the rest of TRaSH-Guides applied declaratively, drop a
-`recyclarr.yml` somewhere and run it as a systemd timer. Sketch:
-
-```nix
-systemd.services.recyclarr = {
-  description = "Apply TRaSH-Guides templates";
-  after = ["sonarr.service" "radarr.service"];
-  serviceConfig.Type = "oneshot";
-  script = "${pkgs.recyclarr}/bin/recyclarr sync --config /etc/recyclarr.yml";
-};
-systemd.timers.recyclarr = {
-  wantedBy = ["timers.target"];
-  timerConfig.OnCalendar = "daily";
-};
-```
-
-I haven't wired this in by default because the API keys it needs are
-host-state, not Nix-state — easier to add once the *arr apps are up.
 
 ## Adding a new module
 
