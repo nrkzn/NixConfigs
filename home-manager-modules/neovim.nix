@@ -14,6 +14,9 @@
       defaultEditor = true;
       viAlias = true;
       vimAlias = true;
+      # All plugins below are Lua — no Ruby/Python providers needed.
+      withRuby = false;
+      withPython3 = false;
 
       plugins = with pkgs.vimPlugins; [
         nvim-treesitter.withAllGrammars

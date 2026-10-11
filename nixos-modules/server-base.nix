@@ -1,9 +1,15 @@
 {
   config,
+  options,
   pkgs,
   lib,
   ...
-}: {
+}: let
+  journalLimits = {
+    SystemMaxUse = "500M";
+    MaxRetentionSec = "1month";
+  };
+in {
   options = {
     myNixOS.serverBase.enable = lib.mkEnableOption "headless server baseline (no GUI, journald limits, fail2ban)";
   };
@@ -12,10 +18,15 @@
     # Headless: no graphical target
     services.xserver.enable = lib.mkDefault false;
 
-    services.journald.extraConfig = ''
-      SystemMaxUse=500M
-      MaxRetentionSec=1month
-    '';
+    # nixpkgs (Oct 2026) replaced journald.extraConfig with settings.Journal
+    # and now rejects the old option. Lock files are per machine, so support
+    # both until every host is past the change.
+    services.journald =
+      if options.services.journald ? settings
+      then {settings.Journal = journalLimits;}
+      else {
+        extraConfig = lib.concatStrings (lib.mapAttrsToList (k: v: "${k}=${v}\n") journalLimits);
+      };
 
     services.fail2ban = {
       enable = true;
