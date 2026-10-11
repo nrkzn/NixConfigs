@@ -306,7 +306,8 @@
   environment.systemPackages = with pkgs; [
     rsync
     nfs-utils
-    ffmpeg-full  # for testing NVENC: `ffmpeg -hwaccels` should list cuda  ];
+    ffmpeg-full  # for testing NVENC: `ffmpeg -hwaccels` should list cuda
+  ];
 
   # Give Jellyfin's systemd unit access to the NVIDIA device nodes so NVENC/
   # NVDEC works. After rebuild, in Jellyfin's web UI → Dashboard → Playback,
