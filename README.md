@@ -176,6 +176,22 @@ journalctl -u recyclarr -e
    the Cloudflare tunnel), and point its Sonarr/Radarr servers at the synced
    profiles.
 
+### Monitoring (Prometheus + Grafana)
+
+[hosts/mediaserver/monitoring.nix](hosts/mediaserver/monitoring.nix):
+exporters (node, systemd, NVIDIA GPU, Sonarr/Radarr/Lidarr/Prowlarr via
+exportarr, WireGuard) → Prometheus on `127.0.0.1:9090` (30 days of history) →
+Grafana on **http://10.1.1.5:3000**, LAN only — not exposed through the
+Cloudflare tunnel.
+
+- Login `admin`; the initial password is the `grafana-admin-password` sops
+  secret (`sops decrypt secrets/mediaserver.yaml`). It only applies on
+  Grafana's first start — change it in the UI afterwards.
+- Pre-provisioned dashboards: *Node Exporter Full* (CPU, RAM, disks,
+  temperatures, network), *Sonarr v3*, *Radarr v3*. More can be imported by
+  ID in the UI (Dashboards → New → Import); pick the `prometheus` datasource.
+- No alerting is configured.
+
 ### Jellyfin transcoding on the GTX 970M (Maxwell)
 
 The 970M has hard limits TRaSH-Guides' Jellyfin recommendations don't account

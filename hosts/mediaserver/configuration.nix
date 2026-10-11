@@ -8,6 +8,7 @@
   imports = [
     ./hardware-configuration.nix
     ./recyclarr.nix
+    ./monitoring.nix
   ];
 
   # Pin to 6.6 LTS — the legacy 470 NVIDIA driver (required for the GTX
@@ -252,6 +253,7 @@
 
   networking.firewall.extraInputRules = ''
     ip saddr 10.1.1.0/24 tcp dport { 8096, 8920, 8989, 7878, 9696, 6767, 9091, 5055, 8686, 8084 } accept comment "nixarr web UIs (LAN only)"
+    ip saddr 10.1.1.0/24 tcp dport 3000 accept comment "grafana (LAN only)"
     ip saddr 10.1.1.0/24 udp dport { 1900, 7359 } accept comment "jellyfin DLNA + autodiscover (LAN only)"
   '';
 
