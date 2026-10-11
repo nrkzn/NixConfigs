@@ -48,6 +48,14 @@ in {
       libnatpmp        # `natpmpc` for NAT-PMP port-forward debugging
     ];
 
+    # Laptop-as-server: closing the lid must not suspend or power off,
+    # whether on battery, on AC, or docked.
+    services.logind.settings.Login = {
+      HandleLidSwitch = "ignore";
+      HandleLidSwitchExternalPower = "ignore";
+      HandleLidSwitchDocked = "ignore";
+    };
+
     # No automatic suspend on a server
     systemd.targets = {
       sleep.enable = false;
