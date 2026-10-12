@@ -241,6 +241,30 @@
     };
   };
 
+  # --------------------------------------------------------------------------
+  # Fixed LAN address. 10.1.1.5 is outside the FRITZ!Box's DHCP range, so it
+  # can't collide with a DHCP lease, and the IP no longer changes on reboot.
+  # --------------------------------------------------------------------------
+  networking.networkmanager = {
+    ensureProfiles.profiles.lan = {
+      connection = {
+        id = "lan";
+        type = "ethernet";
+        interface-name = "enp3s0";
+        autoconnect = true;
+        autoconnect-priority = 100;
+      };
+      ipv4 = {
+        method = "manual";
+        address1 = "10.1.1.5/24,10.1.1.1"; # address/prefix,gateway
+        dns = "10.1.1.1;";
+      };
+      ipv6.method = "auto";
+    };
+    # Don't auto-create a DHCP "Wired connection 1" next to the profile above.
+    settings.main.no-auto-default = "interface-name:enp3s0";
+  };
+
   time.timeZone = "America/New_York";
 
   # Firewall: SSH is reachable from anywhere (opened by myNixOS.ssh). All
