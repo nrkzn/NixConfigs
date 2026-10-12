@@ -411,7 +411,8 @@ in {
       bindsTo = ["wg.service"];
       wantedBy = ["multi-user.target"];
 
-      path = with pkgs; [libnatpmp transmission_4 gnugrep gawk coreutils iproute2];
+      # iptables: same package VPN-Confinement uses for the netns firewall.
+      path = with pkgs; [libnatpmp transmission_4 gnugrep gawk coreutils iproute2 iptables];
 
       serviceConfig = {
         Restart = "on-failure";
@@ -423,6 +424,20 @@ in {
         GW="${cfg.vpn.portForward.gateway}"
         NETNS="${cfg.vpn.portForward.netns}"
         RPC_PORT="${toString cfg.transmission.port}"
+
+        # The netns firewall drops all inbound traffic on the tunnel except
+        # Nixarr's static openVPNPorts (= transmission.peerPort), so the
+        # dynamic NAT-PMP port has to be opened here. Own chain, flushed on
+        # every change, so a previous port never stays open.
+        nsipt() { ip netns exec "$NETNS" iptables "$@"; }
+        open_port() {
+          nsipt -N natpmp-in 2>/dev/null || true
+          nsipt -C INPUT -j natpmp-in 2>/dev/null || nsipt -I INPUT -j natpmp-in
+          nsipt -F natpmp-in
+          for proto in tcp udp; do
+            nsipt -A natpmp-in -i "''${NETNS}0" -p "$proto" --dport "$1" -j ACCEPT
+          done
+        }
 
         last_port=""
 
@@ -447,6 +462,10 @@ in {
             echo "WARNING: could not parse forwarded port from natpmpc; retrying"
             sleep 10
             continue
+          fi
+
+          if [ "$port" != "$last_port" ]; then
+            open_port "$port" || echo "WARNING: failed to open port $port in the netns firewall"
           fi
 
           # Push the port to Transmission EVERY cycle, not just on change.
