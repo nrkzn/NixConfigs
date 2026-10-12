@@ -298,6 +298,13 @@ in {
             download-dir = cfg.transmission.downloadDir;
             incomplete-dir = "${cfg.transmission.downloadDir}/.incomplete";
             incomplete-dir-enabled = true;
+            # Write cache (default 4 MB). Torrent pieces arrive in random
+            # order; with a tiny cache a fast download (~40 MB/s once port
+            # forwarding works) turns into a stream of small random writes
+            # that saturates the 5400 rpm /data HDD and stalls the daemon
+            # (RPC/web UI time out while it waits on disk). 128 MB batches
+            # them into larger writes.
+            cache-size-mb = 128;
             ratio-limit = 2.0;
             ratio-limit-enabled = true;
             speed-limit-up = 2000;
