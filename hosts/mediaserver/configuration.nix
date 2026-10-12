@@ -161,15 +161,22 @@
     enable-nixarr-apps = true;  # auto-wires Prowlarr → every enabled *arr via internal API keys
   };
 
-  # Nixarr's `transmission` shortcut auto-fills host/port/useSsl. Earlier I
-  # tried to pass `category` and `directory` as fields too, but Nixarr
-  # validates the schema against the *arr's API and those names aren't
-  # accepted. To inspect the real schema on a running system:
-  #   sudo nixarr show-radarr-schemas download_client | jq '.'
-  # If you want categories, set them inside Radarr's UI under Download
-  # Clients → Transmission after first boot.
-  nixarr.sonarr.settings-sync.transmission.enable = true;
-  nixarr.radarr.settings-sync.transmission.enable = true;
+  # Nixarr's `transmission` shortcut auto-fills host/port/useSsl. Each *arr
+  # also gets its own category (TRaSH-Guides): Transmission then saves its
+  # downloads in a /data/media/torrents/<category> subfolder, and each app
+  # only tracks its own downloads instead of every torrent in the client.
+  # Field names are the *arr API's (tvCategory/movieCategory); inspect with
+  #   sudo nixarr show-sonarr-schemas download_client | jq '.'
+  # Lidarr isn't covered by Nixarr's settings-sync: set Category = lidarr in
+  # its UI (Settings → Download Clients → Transmission).
+  nixarr.sonarr.settings-sync.transmission = {
+    enable = true;
+    config.fields.tvCategory = "sonarr";
+  };
+  nixarr.radarr.settings-sync.transmission = {
+    enable = true;
+    config.fields.movieCategory = "radarr";
+  };
 
   # apiKeyFile is left to Nixarr's default (${nixarr.stateDir}/secrets/*.api-key);
   # don't hard-code it here or a future Nixarr refactor will silently
