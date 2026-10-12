@@ -266,6 +266,12 @@ in {
         enable = true;
         wgConf = cfg.vpn.wgConfFile;
         vpnTestService.enable = cfg.vpn.vpnTestService.enable;
+        # exposeOnLAN (default true) adds all RFC1918 ranges to the netns's
+        # accessibleFrom, i.e. routes 10.0.0.0/8 out via the host bridge.
+        # That swallows the VPN provider's in-tunnel gateway (ProtonVPN:
+        # 10.2.0.1 — DNS + NAT-PMP), breaking port forwarding. Only route
+        # the real LAN subnets listed in accessibleFrom instead.
+        exposeOnLAN = false;
         accessibleFrom = cfg.vpn.accessibleFrom;
       };
 
@@ -424,10 +430,12 @@ in {
           # Match ProtonVPN's documented order: UDP first, then TCP, and only
           # proceed if UDP succeeds. Both must be renewed each cycle or Proton
           # tears the mapping down after the 60s lease.
-          if ip netns exec "$NETNS" natpmpc -a 1 0 udp 60 -g "$GW" >/dev/null 2>&1; then
-            mapping=$(ip netns exec "$NETNS" natpmpc -a 1 0 tcp 60 -g "$GW" 2>/dev/null)
+          if udp_out=$(ip netns exec "$NETNS" natpmpc -a 1 0 udp 60 -g "$GW" 2>&1); then
+            mapping=$(ip netns exec "$NETNS" natpmpc -a 1 0 tcp 60 -g "$GW" 2>&1)
           else
-            echo "WARNING: UDP NAT-PMP mapping failed (tunnel down?); retrying"
+            # Keep natpmpc's own last line (e.g. "readnatpmpresponseorretry
+            # returned -100" = no answer from the gateway) for diagnosis.
+            echo "WARNING: UDP NAT-PMP mapping failed: $(echo "$udp_out" | tail -1); retrying"
             sleep 10
             continue
           fi
