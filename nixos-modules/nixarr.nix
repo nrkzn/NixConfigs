@@ -404,6 +404,42 @@ in {
       "d ${cfg.transmission.downloadDir}/.incomplete 0775 media media -"
     ];
 
+    # ----- VPN watchdog -----
+    # A WireGuard tunnel can silently stop handshaking (seen: 15 h with no
+    # traffic until `systemctl restart wg`). The NAT-PMP renewals below send
+    # traffic every 45 s, so a healthy tunnel re-handshakes about every
+    # 2 min; no handshake for 7 min means it's stuck. Restarting wg.service
+    # rebuilds the netns and takes the confined services (Transmission,
+    # protonvpn-natpmp) with it.
+    systemd.services.vpn-watchdog = lib.mkIf cfg.vpn.enable {
+      description = "Restart the VPN namespace when WireGuard stops handshaking";
+      path = with pkgs; [iproute2 wireguard-tools coreutils gawk systemd];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        set -u
+        NETNS="${cfg.vpn.portForward.netns}"
+        MAX_AGE=420
+        systemctl is-active --quiet wg.service || exit 0
+        now=$(date +%s)
+        # Give a freshly (re)started tunnel time for its first handshake.
+        started=$(date -d "$(systemctl show wg.service -p ActiveEnterTimestamp --value)" +%s)
+        [ $((now - started)) -lt "$MAX_AGE" ] && exit 0
+        last=$(ip netns exec "$NETNS" wg show "''${NETNS}0" latest-handshakes | awk '{print $2}' | sort -n | tail -1)
+        age=$((now - ''${last:-0}))
+        if [ "$age" -gt "$MAX_AGE" ]; then
+          echo "No WireGuard handshake for ''${age}s — restarting wg.service"
+          systemctl restart wg.service
+        fi
+      '';
+    };
+    systemd.timers.vpn-watchdog = lib.mkIf cfg.vpn.enable {
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "10min";
+        OnUnitActiveSec = "2min";
+      };
+    };
+
     # ----- ProtonVPN NAT-PMP dynamic port forwarding -----
     # ProtonVPN hands out a forwarded port via NAT-PMP, leased for 60s and
     # subject to change on reconnect. This service runs natpmpc INSIDE the
