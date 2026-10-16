@@ -331,6 +331,11 @@
 
   nixarr.mediaUsers = ["nathan"];
 
+  # Read access to the *arr API keys (Nixarr's <app>-api groups, already used
+  # by Prowlarr/Bazarr/Recyclarr), so queues can be inspected and cleaned
+  # over SSH without the keys being copied anywhere.
+  users.users.nathan.extraGroups = ["lidarr-api" "sonarr-api" "radarr-api" "prowlarr-api"];
+
   # *arr v4 mandates an auth method. Nixarr's settings-sync asserts we've
   # set one before it will sync indexers. We're LAN-only behind a firewall,
   # so `DisabledForLocalAddresses` skips the login screen for LAN clients
