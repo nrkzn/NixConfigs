@@ -41,7 +41,7 @@ in {
 
     stateDir = lib.mkOption {
       type = lib.types.str;
-      default = "/data/nixarr";
+      default = "/var/lib/nixarr";
       description = "Root directory for Nixarr service state.";
     };
 

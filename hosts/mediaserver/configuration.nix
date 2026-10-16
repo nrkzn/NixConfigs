@@ -32,7 +32,10 @@
     nixarr = {
       enable = true;
       mediaDir = "/data/media";
-      stateDir = "/data/nixarr";
+      # App state (SQLite DBs, Jellyfin metadata + transcode cache, API keys,
+      # Transmission resume data) on the NVMe SSD. On the 5400 rpm /data HDD
+      # it competed with torrent I/O ("database is locked", stalled UIs).
+      stateDir = "/var/lib/nixarr";
       # Do NOT auto-open service ports on the host firewall — every service
       # below relies on the per-service `openFirewall = false` default so
       # nothing is reachable from off-host without an SSH tunnel / VPN in.
