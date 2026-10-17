@@ -166,7 +166,8 @@
     # Lidarr: "Add and Remove Only", so Prowlarr doesn't overwrite per-indexer
     # settings made in Lidarr — its indexers use seed ratio 1 (music imports
     # are copies that get removed once seeded; video keeps the global 2.0).
-    lidarr.config.syncLevel = "addOnly";
+    # snake_case: Nixarr validates against the Prowlarr API client's fields.
+    lidarr.config.sync_level = "addOnly";
   };
 
   # Nixarr's `transmission` shortcut auto-fills host/port/useSsl. Each *arr
