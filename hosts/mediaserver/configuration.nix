@@ -9,6 +9,7 @@
     ./hardware-configuration.nix
     ./recyclarr.nix
     ./monitoring.nix
+    ./music-genres.nix
   ];
 
   # Pin to 6.6 LTS — the legacy 470 NVIDIA driver (required for the GTX
